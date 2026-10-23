@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>تحدي ركن السيارات</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body {
+      background-color: #1e1e24;
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      overflow: hidden;
+    }
+    h1 {
+      margin: 10px 0 5px 0;
+      font-size: 22px;
+    }
+    p {
+      font-size: 14px;
+      color: #bbb;
+      margin-bottom: 5px;
+    }
+    #game-container {
+      position: relative;
+      width: 320px;
+      height: 480px;
+      margin: 0 auto;
+      background-color: #333;
+      border: 4px solid #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+    }
+    canvas {
+      background-color: #444;
+      display: block;
+    }
+    .controls {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+    .btn {
+      width: 70px;
+      height: 60px;
+      background-color: #4A90E2;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      touch-action: manipulation;
+    }
+    .btn:active {
+      background-color: #357ABD;
+    }
+    .btn-steer {
+      background-color: #50E3C2;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🚗 تحدي ركن السيارات</h1>
+  <p>حرك السيارة واركنها في الموقف المخصص!</p>
+
+  <div id="game-container">
+    <canvas id="gameCanvas" width="320" height="480"></canvas>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-steer" id="btnLeft">◀</button>
+    <button class="btn" id="btnUp">▲</button>
+    <button class="btn" id="btnDown">▼</button>
+    <button class="btn btn-steer" id="btnRight">▶</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let car = {
+      x: 140,
+      y: 400,
+      width: 35,
+      height: 60,
+      speed: 0,
+      maxSpeed: 3,
+      angle: 0,
+      steering: 0
+    };
+
+    let parkingSpot = {
+      x: 110,
+      y: 40,
+      width: 100,
+      height: 80
+    };
+
+    let keys = {};
+
+    // Touch Controls
+    function setupBtn(id, key) {
+      const btn = document.getElementById(id);
+      btn.addEventListener("touchstart", (e) => { e.preventDefault(); keys[key] = true; });
+      btn.addEventListener("touchend", (e) => { e.preventDefault(); keys[key] = false; });
+      btn.addEventListener("mousedown", () => { keys[key] = true; });
+      btn.addEventListener("mouseup", () => { keys[key] = false; });
+    }
+
+    setupBtn("btnUp", "ArrowUp");
+    setupBtn("btnDown", "ArrowDown");
+    setupBtn("btnLeft", "ArrowLeft");
+    setupBtn("btnRight", "ArrowRight");
+
+    window.addEventListener("keydown", (e) => { keys[e.key] = true; });
+    window.addEventListener("keyup", (e) => { keys[e.key] = false; });
+
+    function update() {
+      if (keys["ArrowUp"]) {
+        car.speed = car.maxSpeed;
+      } else if (keys["ArrowDown"]) {
+        car.speed = -car.maxSpeed / 1.5;
+      } else {
+        car.speed = 0;
+      }
+
+      if (keys["ArrowLeft"]) {
+        car.angle -= 0.04;
+      }
+      if (keys["ArrowRight"]) {
+        car.angle += 0.04;
+      }
+
+      car.x += Math.sin(car.angle) * car.speed;
+      car.y -= Math.cos(car.angle) * car.speed;
+
+      // Check Parking Success
+      if (
+        car.x > parkingSpot.x &&
+        car.x + car.width < parkingSpot.x + parkingSpot.width &&
+        car.y > parkingSpot.y &&
+        car.y + car.height < parkingSpot.y + parkingSpot.height
+      ) {
+        setTimeout(() => {
+          alert("🎉 أحسنت! تم ركن السيارة بنجاح!");
+          car.x = 140;
+          car.y = 400;
+          car.angle = 0;
+        }, 100);
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw Parking Spot
+      ctx.strokeStyle = "#F5A623";
+      ctx.lineWidth = 4;
+      ctx.setLineDash([8, 8]);
+      ctx.strokeRect(parkingSpot.x, parkingSpot.y, parkingSpot.width, parkingSpot.height);
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = "#F5A623";
+      ctx.font = "16px Tahoma";
+      ctx.fillText("موقف P", parkingSpot.x + 20, parkingSpot.y + 45);
+
+      // Draw Car
+      ctx.save();
+      ctx.translate(car.x + car.width / 2, car.y + car.height / 2);
+      ctx.rotate(car.angle);
+
+      // Car Body
+      ctx.fillStyle = "#E74C3C";
+      ctx.fillRect(-car.width / 2, -car.height / 2, car.width, car.height);
+
+      // Windshield
+      ctx.fillStyle = "#333";
+      ctx.fillRect(-car.width / 2 + 4, -car.height / 2 + 10, car.width - 8, 12);
+
+      ctx.restore();
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>
