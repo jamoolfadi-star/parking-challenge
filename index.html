@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>تحدي ازدحام السيارات - Parking Jam</title>
+    <title>تحدي ازدحام السيارات - Parking Jam Deluxe</title>
     <style>
         * {
             box-sizing: border-box;
@@ -12,50 +13,59 @@
             user-select: none;
         }
         body {
-            background-color: #1e1e24;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
             color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             text-align: center;
             overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 10px 0;
         }
         .header {
-            background: #252338;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
             padding: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            border-bottom: 2px solid rgba(255,255,255,0.1);
         }
         h1 {
-            font-size: 20px;
-            color: #ffc40f;
-            margin-bottom: 5px;
+            font-size: 22px;
+            color: #f39c12;
+            margin-bottom: 4px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
         .info-bar {
             display: flex;
             justify-content: space-around;
-            font-size: 14px;
-            color: #bbb;
+            font-size: 15px;
+            color: #ecf0f1;
             font-weight: bold;
         }
         #game-container {
             position: relative;
-            width: 340px;
-            height: 440px;
-            margin: 15px auto;
-            background-color: #333;
-            border: 4px solid #fff;
-            border-radius: 12px;
+            width: 350px;
+            height: 480px;
+            margin: 0 auto;
+            background-color: #2c3e50;
+            border: 6px solid #f1c40f;
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
         }
         canvas {
-            background-color: #2b2b36;
+            background: radial-gradient(circle, #34495e 0%, #2c3e50 100%);
             display: block;
             touch-action: none;
         }
         .instructions {
             font-size: 13px;
-            color: #a0a0a0;
-            margin-top: 10px;
-            padding: 0 10px;
+            color: #bdc3c7;
+            background: rgba(0,0,0,0.2);
+            padding: 8px;
+            margin: 0 20px;
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -70,11 +80,11 @@
     </div>
 
     <div id="game-container">
-        <canvas id="gameCanvas" width="340" height="440"></canvas>
+        <canvas id="gameCanvas" width="350" height="480"></canvas>
     </div>
 
     <div class="instructions">
-        اضغط مع الاستمرار واسحب السيارة لإخراجها من الازدحام!
+        💡 اسحب السيارة الحمراء الذكية وأخرجها من بوابة الخروج العلوية!
     </div>
 
     <script>
@@ -84,24 +94,23 @@
         let currentLevel = 1;
         let moves = 0;
 
-        // تعريف السيارات في اللعبة (موقعها، حجمها، أفقية أو عمودية، ولونها)
+        // مصفوفة السيارات بتصميم وتفاصيل أكثر جاذبية
         let cars = [
-            { id: 1, x: 120, y: 180, width: 100, height: 45, horiz: true, color: '#e74c3c', isPlayer: true }, // سيارة اللاعب الرئيسية
-            { id: 2, x: 120, y: 80, width: 45, height: 100, horiz: false, color: '#3498db' }, // عائق عمودي
-            { id: 3, x: 225, y: 180, width: 45, height: 100, horiz: false, color: '#2ecc71' }, // عائق عمودي
-            { id: 4, x: 70, y: 260, width: 100, height: 45, horiz: true, color: '#f1c40f' }   // عائق أفقي
+            { id: 1, x: 125, y: 200, width: 100, height: 50, horiz: true, color: '#e74c3c', type: 'sports', isPlayer: true }, // سيارة اللاعب (حمراء مميزة)
+            { id: 2, x: 125, y: 90, width: 50, height: 100, horiz: false, color: '#3498db', type: 'bus' }, // باص أزرق عمودي
+            { id: 3, x: 235, y: 190, width: 50, height: 110, horiz: false, color: '#2ecc71', type: 'suv' }, // سيارة دفع رباعي أخضر
+            { id: 4, x: 60, y: 310, width: 110, height: 50, horiz: true, color: '#f1c40f' }   // سيارة صفراء أفقية
         ];
 
         let selectedCar = null;
         let startX = 0, startY = 0;
 
-        // تتبع اللمس أو الماوس لتحريك السيارات
+        // تفاعل اللمس والسحب
         canvas.addEventListener('pointerdown', (e) => {
             const rect = canvas.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
 
-            // البحث عن السيارة التي تم الضغط عليها
             for (let car of cars) {
                 if (mouseX >= car.x && mouseX <= car.x + car.width &&
                     mouseY >= car.y && mouseY <= car.y + car.height) {
@@ -124,16 +133,12 @@
             const dy = mouseY - startY;
 
             if (selectedCar.horiz) {
-                // حركة أفقية فقط
                 let newX = selectedCar.x + dx;
-                // حدود الحلبة الأفقية
                 if (newX >= 10 && newX + selectedCar.width <= canvas.width - 10) {
                     selectedCar.x = newX;
                 }
             } else {
-                // حركة عمودية فقط
                 let newY = selectedCar.y + dy;
-                // حدود الحلبة العمودية
                 if (newY >= 10 && newY + selectedCar.height <= canvas.height - 10) {
                     selectedCar.y = newY;
                 }
@@ -149,9 +154,9 @@
                 moves++;
                 document.getElementById('moves-text').innerText = `الحركات: ${moves}`;
                 
-                // فوز اللاعب إذا خرجت السيارة الرئيسية من المخرج العلوي
-                if (selectedCar.isPlayer && selectedCar.y < 20) {
-                    alert('🎉 كفو! اجتزت الازدحام بنجاح!');
+                // شرط الفوز: خروج سيارة اللاعب من البوابة العلوية
+                if (selectedCar.isPlayer && selectedCar.y < 25) {
+                    alert('🎉 مبروك! أبدعت في حل الازدحام والانتقال للمرحلة التالية!');
                     currentLevel++;
                     moves = 0;
                     resetLevel();
@@ -161,42 +166,92 @@
         });
 
         function resetLevel() {
-            // إعادة تعيين أماكن السيارات
             cars = [
-                { id: 1, x: 120, y: 180, width: 100, height: 45, horiz: true, color: '#e74c3c', isPlayer: true },
-                { id: 2, x: 120, y: 80, width: 45, height: 100, horiz: false, color: '#3498db' },
-                { id: 3, x: 225, y: 180, width: 45, height: 100, horiz: false, color: '#2ecc71' },
-                { id: 4, x: 70, y: 260, width: 100, height: 45, horiz: true, color: '#f1c40f' }
+                { id: 1, x: 125, y: 200, width: 100, height: 50, horiz: true, color: '#e74c3c', type: 'sports', isPlayer: true },
+                { id: 2, x: 125, y: 90, width: 50, height: 100, horiz: false, color: '#3498db', type: 'bus' },
+                { id: 3, x: 235, y: 190, width: 50, height: 110, horiz: false, color: '#2ecc71', type: 'suv' },
+                { id: 4, x: 60, y: 310, width: 110, height: 50, horiz: true, color: '#f1c40f' }
             ];
             document.getElementById('level-text').innerText = `المرحلة: ${currentLevel}`;
             document.getElementById('moves-text').innerText = `الحركات: ${moves}`;
             draw();
         }
 
+        // دالة رسم السيارات بشكل احترافي يشبه الألعاب الحقيقية
+        function drawCar(car) {
+            ctx.save();
+            ctx.translate(car.x, car.y);
+
+            // هيكل السيارة الأساسي بزوايا دائرية
+            ctx.fillStyle = car.color;
+            ctx.beginPath();
+            ctx.roundRect(0, 0, car.width, car.height, 10);
+            ctx.fill();
+
+            // إطار خارجي وظل داخلي لإعطاء مظهر ثلاثي الأبعاد
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // رسم تفاصيل السيارة (النوافذ والمصابيح)
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            if (car.horiz) {
+                // نوافذ أفقية
+                ctx.fillRect(car.width * 0.25, 6, car.width * 0.5, car.height - 12);
+                // إضاءة أمامية وخلفية
+                ctx.fillStyle = '#f1c40f';
+                ctx.fillRect(car.width - 6, 8, 4, 8);
+                ctx.fillRect(car.width - 6, car.height - 16, 4, 8);
+            } else {
+                // نوافذ عمودية
+                ctx.fillRect(6, car.height * 0.25, car.width - 12, car.height * 0.5);
+                // إضاءة أمامية وخلفية
+                ctx.fillStyle = '#f1c40f';
+                ctx.fillRect(8, 2, 8, 4);
+                ctx.fillRect(car.width - 16, 2, 8, 4);
+            }
+
+            // تمييز سيارة اللاعب بإطار أبيض مضيء
+            if (car.isPlayer) {
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.roundRect(0, 0, car.width, car.height, 10);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // رسم بوابة الخروج في الأعلى
-            ctx.fillStyle = '#2ecc71';
-            ctx.fillRect(120, 0, 100, 10);
+            // رسم منطقة صف الشارع والموقف
+            ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 6]);
+            ctx.beginPath();
+            ctx.moveTo(20, 20); ctx.lineTo(canvas.width - 20, 20);
+            ctx.moveTo(20, canvas.height - 20); ctx.lineTo(canvas.width - 20, canvas.height - 20);
+            ctx.stroke();
+            ctx.setLineDash([]); // إلغاء الخط المتقطع
 
-            // رسم السيارات
+            // رسم بوابة الخروج في الأعلى (المنطقة الخضراء)
+            ctx.fillStyle = '#27ae60';
+            ctx.beginPath();
+            ctx.roundRect(125, 0, 100, 14, 4);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 10px Tahoma';
+            ctx.fillText('EXIT ➔', 160, 11);
+
+            // رسم كل السيارات
             for (let car of cars) {
-                ctx.fillStyle = car.color;
-                ctx.beginPath();
-                ctx.roundRect(car.x, car.y, car.width, car.height, 8);
-                ctx.fill();
-                
-                // إطار أبيض للسيارة المميزة
-                if (car.isPlayer) {
-                    ctx.strokeStyle = '#fff';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                }
+                drawCar(car);
             }
         }
 
-        // الرسم الأولي عند التحميل
+        // الرسم الأولي
         draw();
     </script>
 </body>
